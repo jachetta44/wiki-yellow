@@ -112,7 +112,7 @@ const GOLFER_DATA: Array<[string, string]> = [
 ];
 
 const GOLFER_OVERRIDES: Record<string, Partial<Golfer>> = {
-  "Yang Yong-eun": {
+  "Y. E. Yang": {
     displayName: "Y.E. Yang",
     acceptedAnswers: ["Y.E. Yang", "YE Yang", "Y E Yang", "Yang Yong-eun", "Yong-eun Yang"],
   },

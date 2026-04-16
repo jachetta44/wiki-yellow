@@ -191,9 +191,13 @@ export function extractInfoboxData(doc: Document): MetaInfo {
   const weight = rowFor(/^weight$/i)?.text || rowFor(/weight/i)?.text || null;
   const born = rowFor(/born/i)?.text || null;
 
-  const nationality =
-    rowFor(/nationality|country/i)?.text ||
-    (born ? born.split(",").map((x) => x.trim()).filter(Boolean).at(-1) || null : null);
+  const bornParts = born
+  ? born.split(",").map((x) => x.trim()).filter(Boolean)
+  : [];
+
+const nationality =
+  rowFor(/nationality|country/i)?.text ||
+  (bornParts.length ? bornParts[bornParts.length - 1] : null);
 
   const rankingText = rowFor(/highest ranking|world ranking/i)?.text || null;
 
