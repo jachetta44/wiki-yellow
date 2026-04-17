@@ -2,7 +2,7 @@ export type Golfer = {
   wikiTitle: string;
   displayName: string;
   acceptedAnswers?: string[];
-  obviousClue: string;
+  lifeline: string;
 };
 
 export type MetaInfo = {
