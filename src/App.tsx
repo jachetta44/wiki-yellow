@@ -26,7 +26,7 @@ export type RoundResult = {
 };
 
 export function computeRoundResult(strokes: number, gaveUp: boolean): RoundResult {
-  if (gaveUp) return { label: "Snowman ☃️", scoreVsPar: 4, snowman: true };
+  if (gaveUp) return { label: "Triple Bogey", scoreVsPar: 3, snowman: true };
   const scoreVsPar = strokes - PAR;
   const label = parLabel(scoreVsPar);
   return { label, scoreVsPar, snowman: false };
@@ -42,7 +42,7 @@ export type HoleRecord = {
 export const HOLES_PER_ROUND = 9;
 
 export function holeEmoji(result: RoundResult): string {
-  if (result.snowman) return "☃️";
+  if (result.snowman) return "🟥";
   switch (result.scoreVsPar) {
     case -3: return "🦤";
     case -2: return "🦅";
@@ -57,7 +57,7 @@ export function holeEmoji(result: RoundResult): string {
 export function parLabel(scoreVsPar: number): string {
   switch (scoreVsPar) {
     case -3: return "Albatross";
-    case -2: return "Eagle";
+    case -2: return "Hole in One";
     case -1: return "Birdie";
     case  0: return "Par";
     case  1: return "Bogey";
@@ -303,7 +303,7 @@ export default function App() {
     setLastResult(result);
     setHoleHistory((h) => [...h, { golferName: current.displayName, imageUrl: meta.imageUrl, result, strokes: strokesThisRound }]);
     setAnswerRevealed(true);
-    setMessage(`Answer was ${current.displayName}. Snowman — ${result.scoreVsPar > 0 ? "+" : ""}${result.scoreVsPar} vs par.`);
+    setMessage(`Answer was ${current.displayName}. Triple bogey — +3 vs par.`);
     setMessageTone("info");
     markSeen(current.wikiTitle);
   }

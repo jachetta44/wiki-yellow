@@ -135,9 +135,9 @@ const GOLFER_OVERRIDES: Record<string, Partial<Golfer>> = {
   "Miguel Ángel Jiménez": {
     acceptedAnswers: ["Miguel Angel Jimenez", "Jimenez"],
   },
-  "Thomas Bjørn": {
-    acceptedAnswers: ["Thomas Bjorn", "Bjorn"],
-  },
+  // "Thomas Bjørn": {
+  //   acceptedAnswers: ["Thomas Bjorn", "Bjorn"],
+  // },
   "Ludvig Åberg": {
     acceptedAnswers: ["Ludvig Aberg", "Aberg"],
   },

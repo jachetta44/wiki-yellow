@@ -157,7 +157,7 @@ export function GuessPanel({
               <Flag className="mr-1 h-3 w-3" />
               Give up
             </Button>
-            <span className="text-[11px] text-slate-400">+4 · Snowman ☃️</span>
+            <span className="text-[11px] text-slate-400">+3 · Triple Bogey</span>
           </div>
         )}
       </div>
