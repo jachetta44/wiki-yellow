@@ -97,17 +97,22 @@ const EMPTY_META: MetaInfo = {
 const SEEN_KEY = "wiki-yellow-seen-v1";
 const DAILY_KEY = "wiki-yellow-daily-v1";
 
-function loadDailyDone(): boolean {
+type DailyStore = { date: string; holeHistory: HoleRecord[]; totalVsPar: number };
+
+function loadDailyStore(): DailyStore | null {
   try {
     const raw = localStorage.getItem(DAILY_KEY);
-    if (!raw) return false;
-    const { date } = JSON.parse(raw) as { date: string };
-    return date === getTodayString();
-  } catch { return false; }
+    if (!raw) return null;
+    const data = JSON.parse(raw) as DailyStore;
+    return data.date === getTodayString() ? data : null;
+  } catch { return null; }
 }
 
-function saveDailyDone() {
-  try { localStorage.setItem(DAILY_KEY, JSON.stringify({ date: getTodayString() })); } catch {}
+function saveDailyStore(holeHistory: HoleRecord[], totalVsPar: number) {
+  try {
+    const store: DailyStore = { date: getTodayString(), holeHistory, totalVsPar };
+    localStorage.setItem(DAILY_KEY, JSON.stringify(store));
+  } catch {}
 }
 
 function loadSeen(): Set<string> {
@@ -129,6 +134,7 @@ function buildBag(seen: Set<string>): Golfer[] {
 export default function App() {
   const { open: howToPlayOpen, setOpen: setHowToPlayOpen } = useHowToPlay();
   const [mode, setMode] = useState<'daily' | 'infinite'>('daily');
+  const _dailyStore = loadDailyStore();
   const [seen, setSeen] = useState<Set<string>>(loadSeen);
   const [shuffleBag, setShuffleBag] = useState<Golfer[]>(() => getInfiniteGolfers(GOLFERS));
   const [dailyBag] = useState<Golfer[]>(() => getDailyGolfers(GOLFERS));
@@ -152,9 +158,9 @@ export default function App() {
   const [streak, setStreak] = useState(0);
   const [lastResult, setLastResult] = useState<RoundResult | null>(null);
 
-  // 9-hole round tracking
-  const [holeHistory, setHoleHistory] = useState<HoleRecord[]>([]);
-  const [showScorecard, setShowScorecard] = useState(false);
+  // 9-hole round tracking — restore from localStorage if daily already completed today
+  const [holeHistory, setHoleHistory] = useState<HoleRecord[]>(() => _dailyStore?.holeHistory ?? []);
+  const [showScorecard, setShowScorecard] = useState(() => !!_dailyStore);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -331,7 +337,7 @@ export default function App() {
   function nextPlayer() {
     setGuess("");
     if (holeHistory.length >= HOLES_PER_ROUND) {
-      if (mode === 'daily') saveDailyDone();
+      if (mode === 'daily') saveDailyStore(holeHistory, totalVsPar);
       setShowScorecard(true);
       return;
     }
