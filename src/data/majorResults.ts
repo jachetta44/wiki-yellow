@@ -100,7 +100,7 @@ export const MAJOR_RESULTS: Record<string, MajorResultEntry> = {
   "Im Sung-jae":     { type: 'best', tournament: "The Masters",           year: 2020, position: "T2",  course: "Augusta National Golf Club",           location: "Augusta, Georgia" },
   "Will Zalatoris":  { type: 'best', tournament: "The Masters",           year: 2021, position: "2",   course: "Augusta National Golf Club",           location: "Augusta, Georgia" },
   "David Duval":     { type: 'best', tournament: "The Masters",           year: 1998, position: "T2",  course: "Augusta National Golf Club",           location: "Augusta, Georgia" },
-  "Darren Clarke":   { type: 'best', tournament: "The Open Championship", year: 1997, position: "T2",  course: "Royal Troon Golf Club (Old Course)",  location: "Troon, Scotland" },
+  "Darren Clarke":   { type: 'win',  tournament: "The Open Championship", year: 2011, course: "Royal St George's Golf Club", location: "Sandwich, England", onlyMasters: false },
   "Tyrrell Hatton":  { type: 'best', tournament: "The Open Championship", year: 2016, position: "T5",  course: "Royal Troon Golf Club (Old Course)",  location: "Troon, Scotland" },
   "Thomas Pieters":  { type: 'best', tournament: "PGA Championship",      year: 2019, position: "T23", course: "Bethpage Black",                      location: "Farmingdale, New York" },
   "Sam Burns":       { type: 'best', tournament: "The Masters",           year: 2026, position: "T7",  course: "Augusta National Golf Club",           location: "Augusta, Georgia" },

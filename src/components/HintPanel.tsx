@@ -1,10 +1,8 @@
 import { Lock, Eye, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const DEFAULT_LABELS = ["Peak ranking", "Wins by tour", "Nationality", "Last major win venue", "Lifeline"];
+const DEFAULT_LABELS = ["Nationality", "Last major win venue", "Lifeline"];
 const BLURBS = [
-  "Highest world-ranking peak.",
-  "Win totals, broken out by tour.",
   "Citizenship / country represented.",
   "Course and location of their most recent major win (or best result).",
   "A last-resort personal tell — almost gives it away.",

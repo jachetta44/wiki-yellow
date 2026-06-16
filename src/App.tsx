@@ -17,7 +17,7 @@ import { Golfer, MetaInfo } from "@/components/types";
 const SELF_TESTS_PASSED = runSelfTests();
 
 // ---------- Par system ----------
-export const PAR = 4;
+export const PAR = 3;
 
 export type RoundResult = {
   label: string;  // "Birdie", "Par", etc.
@@ -173,11 +173,10 @@ export default function App() {
 
     return {
       hints: [
-        meta.topRanking || "Peak ranking unavailable.",
-        meta.tourWins || "Wins by tour unavailable.",
         meta.nationality || "Nationality unavailable.",
         majorHintText,
         current.lifeline,
+        // meta.tourWins kept available for future re-addition
       ],
       majorHintLabel,
     };
@@ -447,7 +446,7 @@ export default function App() {
                 hints={hints}
                 onRevealNext={revealHint}
                 answerRevealed={answerRevealed}
-                labelOverrides={{ 3: majorHintLabel }}
+                labelOverrides={{ 1: majorHintLabel }}
               />
             </motion.div>
           </div>
