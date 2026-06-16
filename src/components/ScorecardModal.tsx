@@ -1,4 +1,5 @@
-import { Share2, RotateCcw } from "lucide-react";
+import { Share2, RotateCcw, Check } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { HoleRecord, holeEmoji, PAR } from "@/App";
 import { getInitials } from "@/lib/helpers";
@@ -38,6 +39,7 @@ export function ScorecardModal({
   onSwitchToInfinite: () => void;
 }) {
   const roundVsPar = holeHistory.reduce((sum, h) => sum + h.result.scoreVsPar, 0);
+  const [copied, setCopied] = useState(false);
 
   function buildShareText(): string {
     const emojis = holeHistory.map((h) => holeEmoji(h.result)).join(" ");
@@ -50,9 +52,9 @@ export function ScorecardModal({
   async function handleShare() {
     try {
       await navigator.clipboard.writeText(buildShareText());
-    } catch {
-      // fallback silent
-    }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {}
   }
 
   return (
@@ -145,11 +147,11 @@ export function ScorecardModal({
             {mode === 'daily' && (
               <Button
                 variant="outline"
-                className="flex-1 rounded-xl border-slate-300"
+                className={`flex-1 rounded-xl transition-colors ${copied ? "border-emerald-300 bg-emerald-50 text-emerald-800" : "border-slate-300"}`}
                 onClick={handleShare}
               >
-                <Share2 className="mr-2 h-4 w-4" />
-                Copy score
+                {copied ? <Check className="mr-2 h-4 w-4" /> : <Share2 className="mr-2 h-4 w-4" />}
+                {copied ? "Copied!" : "Share Results"}
               </Button>
             )}
             {mode === 'infinite' ? (
