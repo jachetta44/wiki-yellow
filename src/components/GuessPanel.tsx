@@ -2,7 +2,7 @@ import { RotateCcw, Search, Flag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { getInitials } from "@/lib/helpers";
-import { PAR, parLabel } from "@/App";
+import { PAR, HOLES_PER_ROUND, parLabel } from "@/App";
 
 export function GuessPanel({
   guess,
@@ -19,6 +19,7 @@ export function GuessPanel({
   strokesThisRound,
   hintsUsed,
   totalHints,
+  holeNumber,
 }: {
   guess: string;
   setGuess: (value: string) => void;
@@ -34,6 +35,7 @@ export function GuessPanel({
   strokesThisRound: number;
   hintsUsed: number;
   totalHints: number;
+  holeNumber: number;
 }) {
   const toneClass =
     messageTone === "ok"
@@ -60,9 +62,12 @@ export function GuessPanel({
           <span className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold ${pillAccent}`}>
             For: {onForLabel}
           </span>
-          <span className="text-[11px] text-slate-500">
-            {strokesThisRound} stroke{strokesThisRound !== 1 ? "s" : ""} · par {PAR} · {hintsUsed}/{totalHints} hints
-          </span>
+          <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
+            <span className="rounded-full bg-slate-900 px-2 py-0.5 text-[10px] font-bold text-white">
+              {holeNumber > HOLES_PER_ROUND ? HOLES_PER_ROUND : holeNumber}/{HOLES_PER_ROUND}
+            </span>
+            <span>{hintsUsed}/{totalHints} hints</span>
+          </div>
         </div>
 
         {/* Guess input */}

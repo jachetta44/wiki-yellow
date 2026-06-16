@@ -11,6 +11,7 @@ import { BoardPanel } from "@/components/BoardPanel";
 import { GuessPanel } from "@/components/GuessPanel";
 import { HintPanel } from "@/components/HintPanel";
 import { Scoreboard } from "@/components/Scoreboard";
+import { ScorecardModal } from "@/components/ScorecardModal";
 import { Golfer, MetaInfo } from "@/components/types";
 
 const SELF_TESTS_PASSED = runSelfTests();
@@ -29,6 +30,28 @@ export function computeRoundResult(strokes: number, gaveUp: boolean): RoundResul
   const scoreVsPar = strokes - PAR;
   const label = parLabel(scoreVsPar);
   return { label, scoreVsPar, snowman: false };
+}
+
+export type HoleRecord = {
+  golferName: string;
+  imageUrl: string | null;
+  result: RoundResult;
+  strokes: number;
+};
+
+export const HOLES_PER_ROUND = 9;
+
+export function holeEmoji(result: RoundResult): string {
+  if (result.snowman) return "☃️";
+  switch (result.scoreVsPar) {
+    case -3: return "🦤";
+    case -2: return "🦅";
+    case -1: return "🐦";
+    case  0: return "⬜";
+    case  1: return "🟠";
+    case  2: return "🔴";
+    default: return result.scoreVsPar < 0 ? "🦤" : "🔴";
+  }
 }
 
 export function parLabel(scoreVsPar: number): string {
@@ -108,6 +131,10 @@ export default function App() {
   const [rounds, setRounds] = useState(0);
   const [streak, setStreak] = useState(0);
   const [lastResult, setLastResult] = useState<RoundResult | null>(null);
+
+  // 9-hole round tracking
+  const [holeHistory, setHoleHistory] = useState<HoleRecord[]>([]);
+  const [showScorecard, setShowScorecard] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -252,6 +279,7 @@ export default function App() {
       setTotalVsPar((t) => t + result.scoreVsPar);
       setStreak((s) => (result.scoreVsPar <= 0 ? s + 1 : 0));
       setLastResult(result);
+      setHoleHistory((h) => [...h, { golferName: current.displayName, imageUrl: meta.imageUrl, result, strokes: strokesThisRound + 1 }]);
       setMessage(`${result.label} — ${current.displayName}!`);
       setMessageTone("ok");
       setAnswerRevealed(true);
@@ -274,6 +302,7 @@ export default function App() {
     setTotalVsPar((t) => t + result.scoreVsPar);
     setStreak(0);
     setLastResult(result);
+    setHoleHistory((h) => [...h, { golferName: current.displayName, imageUrl: meta.imageUrl, result, strokes: strokesThisRound }]);
     setAnswerRevealed(true);
     setMessage(`Answer was ${current.displayName}. Snowman — ${result.scoreVsPar > 0 ? "+" : ""}${result.scoreVsPar} vs par.`);
     setMessageTone("info");
@@ -282,6 +311,11 @@ export default function App() {
 
   function nextPlayer() {
     setGuess("");
+    // After 9 holes show the scorecard (holeHistory already has the completed hole)
+    if (holeHistory.length >= HOLES_PER_ROUND) {
+      setShowScorecard(true);
+      return;
+    }
     const nextIdx = currentIndex + 1;
     if (nextIdx < shuffleBag.length) {
       setCurrentIndex(nextIdx);
@@ -300,6 +334,11 @@ export default function App() {
     }
   }
 
+  function startNewRound() {
+    setHoleHistory([]);
+    setShowScorecard(false);
+  }
+
   function revealHint() {
     if (answerRevealed) return;
     setHintLevel((h) => Math.min(h + 1, hints.length));
@@ -310,6 +349,13 @@ export default function App() {
     // Desktop: lock to viewport height so each column scrolls independently.
     // Mobile: normal stacking layout with page scroll.
     <div className="flex min-h-svh flex-col bg-[#f6f3e8] text-slate-900 lg:h-svh">
+      {showScorecard && (
+        <ScorecardModal
+          holeHistory={holeHistory}
+          totalVsPar={totalVsPar}
+          onNewRound={startNewRound}
+        />
+      )}
       <style>{WIKI_CSS}</style>
 
       {/* ── Header ── fixed height, never scrolls */}
@@ -394,6 +440,7 @@ export default function App() {
                 strokesThisRound={strokesThisRound}
                 hintsUsed={hintLevel}
                 totalHints={hints.length}
+                holeNumber={holeHistory.length + 1}
               />
               <HintPanel
                 hintLevel={hintLevel}
