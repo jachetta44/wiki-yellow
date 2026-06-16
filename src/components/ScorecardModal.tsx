@@ -42,11 +42,14 @@ export function ScorecardModal({
   const [copied, setCopied] = useState(false);
 
   function buildShareText(): string {
-    const emojis = holeHistory.map((h) => holeEmoji(h.result)).join(" ");
+    const emojis = holeHistory.map((h) => holeEmoji(h.result));
+    const row1 = emojis.slice(0, 3).join("  ");
+    const row2 = emojis.slice(3, 6).join("  ");
+    const row3 = emojis.slice(6, 9).join("  ");
     const score = roundVsPar === 0 ? "E" : roundVsPar > 0 ? `+${roundVsPar}` : `${roundVsPar}`;
     const today = new Date();
-    const dateStr = today.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
-    return `Wiki Yellow ⛳ — ${dateStr}\n${emojis}\n${score} · wikiyellow.com`;
+    const dateStr = `${today.getMonth() + 1}/${today.getDate()}/${String(today.getFullYear()).slice(2)}`;
+    return `Wiki Yellow ⛳ ${dateStr}\n${row1}\n${row2}\n${row3}\n${score} · wikiyellow.com`;
   }
 
   async function handleShare() {
@@ -131,10 +134,12 @@ export function ScorecardModal({
 
         {/* Emoji strip — daily only */}
         {mode === 'daily' && (
-          <div className="mx-4 mb-3 rounded-xl border border-slate-200 bg-white/70 px-3 py-2 text-center">
-            <div className="text-lg leading-relaxed tracking-wide">
-              {holeHistory.map((h) => holeEmoji(h.result)).join(" ")}
-            </div>
+          <div className="mx-4 mb-3 rounded-xl border border-slate-200 bg-white/70 px-3 py-2 text-center font-mono">
+            {[0, 3, 6].map((start) => (
+              <div key={start} className="text-lg leading-relaxed tracking-widest">
+                {holeHistory.slice(start, start + 3).map((h) => holeEmoji(h.result)).join("  ")}
+              </div>
+            ))}
             <div className="mt-0.5 text-[11px] text-slate-400">
               {formatVsPar(roundVsPar)} · par {PAR * 9} · wikiyellow.com
             </div>
