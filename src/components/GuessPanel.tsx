@@ -42,7 +42,7 @@ export function GuessPanel({
       ? "border-red-200 bg-red-50 text-red-900"
       : "border-slate-200 bg-white text-slate-800";
 
-  const scoreVsPar = strokesThisRound - PAR;
+  const scoreVsPar = (strokesThisRound + 1) - PAR;
   const onForLabel = parLabel(scoreVsPar);
 
   const pillAccent =
@@ -142,15 +142,18 @@ export function GuessPanel({
 
         {/* Give up */}
         {!answerRevealed && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-7 rounded-xl text-xs"
-            onClick={handleReveal}
-          >
-            <Flag className="mr-1 h-3 w-3" />
-            Give up
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 rounded-xl text-xs"
+              onClick={handleReveal}
+            >
+              <Flag className="mr-1 h-3 w-3" />
+              Give up
+            </Button>
+            <span className="text-[11px] text-slate-400">+4 · Snowman ☃️</span>
+          </div>
         )}
       </div>
     </div>

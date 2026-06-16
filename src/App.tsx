@@ -16,7 +16,7 @@ import { Golfer, MetaInfo } from "@/components/types";
 const SELF_TESTS_PASSED = runSelfTests();
 
 // ---------- Par system ----------
-export const PAR = 3; // strokes at par
+export const PAR = 4;
 
 export type RoundResult = {
   label: string;  // "Birdie", "Par", etc.
@@ -127,7 +127,7 @@ export default function App() {
         majorData.course,
         majorData.location,
         majorData.onlyMasters
-          ? "Tough luck — it's always Augusta! 🏌️"
+          ? "Tough luck — it's always Augusta!"
           : `${majorData.tournament} · ${majorData.year}`,
       ]
         .filter(Boolean)
@@ -247,7 +247,7 @@ export default function App() {
     setGuess("");
 
     if (correct) {
-      const result = computeRoundResult(strokesThisRound, false);
+      const result = computeRoundResult(strokesThisRound + 1, false);
       setRounds((r) => r + 1);
       setTotalVsPar((t) => t + result.scoreVsPar);
       setStreak((s) => (result.scoreVsPar <= 0 ? s + 1 : 0));
