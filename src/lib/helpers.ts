@@ -117,6 +117,21 @@ export function getDailyGolfers(golfers: Golfer[]): Golfer[] {
   return seededShuffle(picked, rng);
 }
 
+export function getInfiniteGolfers(golfers: Golfer[]): Golfer[] {
+  const rng = () => Math.random();
+  const legends = shuffleArray(golfers.filter(g => g.era === 'legend'));
+  const classics = shuffleArray(golfers.filter(g => g.era === 'classic'));
+  const moderns = shuffleArray(golfers.filter(g => g.era === 'modern'));
+  const picked = [
+    ...legends.slice(0, 2),
+    ...classics.slice(0, 3),
+    ...moderns.slice(0, 4),
+  ];
+  // suppress unused warning
+  void rng;
+  return shuffleArray(picked);
+}
+
 export function shuffleArray<T>(array: T[]): T[] {
   const copy = [...array];
 

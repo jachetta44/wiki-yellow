@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { toPng } from "html-to-image";
 import { Badge } from "@/components/ui/badge";
 import { WIKI_CSS } from "@/lib/constants";
-import { runSelfTests, normalizeName, shuffleArray, getDailyGolfers, getTodayString } from "@/lib/helpers";
+import { runSelfTests, normalizeName, shuffleArray, getDailyGolfers, getInfiniteGolfers, getTodayString } from "@/lib/helpers";
 import { fetchWikiMarkup, findMajorTables, cleanTablesHtml, extractInfoboxData } from "@/lib/wiki";
 import { GOLFERS } from "@/data/golfers";
 import { MAJOR_RESULTS } from "@/data/majorResults";
@@ -128,7 +128,7 @@ function buildBag(seen: Set<string>): Golfer[] {
 export default function App() {
   const [mode, setMode] = useState<'daily' | 'infinite'>('daily');
   const [seen, setSeen] = useState<Set<string>>(loadSeen);
-  const [shuffleBag, setShuffleBag] = useState<Golfer[]>(() => buildBag(loadSeen()));
+  const [shuffleBag, setShuffleBag] = useState<Golfer[]>(() => getInfiniteGolfers(GOLFERS));
   const [dailyBag] = useState<Golfer[]>(() => getDailyGolfers(GOLFERS));
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -341,14 +341,7 @@ export default function App() {
     if (nextIdx < shuffleBag.length) {
       setCurrentIndex(nextIdx);
     } else {
-      const newSeen = new Set(seen);
-      newSeen.add(current.wikiTitle);
-      const newBag = buildBag(newSeen);
-      if (newBag.length === GOLFERS.length) {
-        setSeen(new Set());
-        saveSeen(new Set());
-      }
-      setShuffleBag(newBag);
+      setShuffleBag(getInfiniteGolfers(GOLFERS));
       setCurrentIndex(0);
     }
   }
@@ -358,7 +351,7 @@ export default function App() {
     setShowScorecard(false);
     setCurrentIndex(0);
     if (mode === 'infinite') {
-      setShuffleBag(buildBag(seen));
+      setShuffleBag(getInfiniteGolfers(GOLFERS));
     }
   }
 
@@ -367,7 +360,7 @@ export default function App() {
     setHoleHistory([]);
     setShowScorecard(false);
     setCurrentIndex(0);
-    setShuffleBag(buildBag(seen));
+    setShuffleBag(getInfiniteGolfers(GOLFERS));
   }
 
   function revealHint() {

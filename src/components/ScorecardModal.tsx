@@ -42,7 +42,9 @@ export function ScorecardModal({
   function buildShareText(): string {
     const emojis = holeHistory.map((h) => holeEmoji(h.result)).join(" ");
     const score = roundVsPar === 0 ? "E" : roundVsPar > 0 ? `+${roundVsPar}` : `${roundVsPar}`;
-    return `Wiki Yellow ⛳ — Front Nine\n${emojis}\n${score} · wikiyellow.com`;
+    const today = new Date();
+    const dateStr = today.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+    return `Wiki Yellow ⛳ — ${dateStr}\n${emojis}\n${score} · wikiyellow.com`;
   }
 
   async function handleShare() {
@@ -125,27 +127,31 @@ export function ScorecardModal({
           ))}
         </div>
 
-        {/* Emoji strip for sharing */}
-        <div className="mx-4 mb-3 rounded-xl border border-slate-200 bg-white/70 px-3 py-2 text-center">
-          <div className="text-lg leading-relaxed tracking-wide">
-            {holeHistory.map((h) => holeEmoji(h.result)).join(" ")}
+        {/* Emoji strip — daily only */}
+        {mode === 'daily' && (
+          <div className="mx-4 mb-3 rounded-xl border border-slate-200 bg-white/70 px-3 py-2 text-center">
+            <div className="text-lg leading-relaxed tracking-wide">
+              {holeHistory.map((h) => holeEmoji(h.result)).join(" ")}
+            </div>
+            <div className="mt-0.5 text-[11px] text-slate-400">
+              {formatVsPar(roundVsPar)} · par {PAR * 9} · wikiyellow.com
+            </div>
           </div>
-          <div className="mt-0.5 text-[11px] text-slate-400">
-            {formatVsPar(roundVsPar)} · par {PAR * 9} · wikiyellow.com
-          </div>
-        </div>
+        )}
 
         {/* Actions */}
         <div className="flex flex-col gap-2 px-4 pb-4">
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              className="flex-1 rounded-xl border-slate-300"
-              onClick={handleShare}
-            >
-              <Share2 className="mr-2 h-4 w-4" />
-              Copy score
-            </Button>
+            {mode === 'daily' && (
+              <Button
+                variant="outline"
+                className="flex-1 rounded-xl border-slate-300"
+                onClick={handleShare}
+              >
+                <Share2 className="mr-2 h-4 w-4" />
+                Copy score
+              </Button>
+            )}
             {mode === 'infinite' ? (
               <Button
                 className="flex-1 rounded-xl bg-slate-900 text-white hover:bg-slate-800"
