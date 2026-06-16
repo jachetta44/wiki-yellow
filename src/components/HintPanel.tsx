@@ -1,7 +1,7 @@
 import { Lock, Eye, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const DEFAULT_LABELS = ["Nationality", "Last major win venue", "Lifeline"];
+const DEFAULT_LABELS = ["Nationality", "Best major result location", "Lifeline"];
 const BLURBS = [
   "Citizenship / country represented.",
   "Course and location of their most recent major win (or best result).",

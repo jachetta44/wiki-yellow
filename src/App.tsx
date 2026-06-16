@@ -149,7 +149,7 @@ export default function App() {
     let majorHintLabel: string;
 
     if (majorData.type === 'win') {
-      majorHintLabel = "Last major win venue";
+      majorHintLabel = "Best major result location";
       majorHintText = [
         majorData.course,
         majorData.location,
@@ -160,14 +160,14 @@ export default function App() {
         .filter(Boolean)
         .join("\n");
     } else if (majorData.type === 'best') {
-      majorHintLabel = "Best major result";
+      majorHintLabel = "Best major result location";
       majorHintText = [
         majorData.course,
         majorData.location,
         `Best result: ${majorData.position} · ${majorData.tournament} ${majorData.year}`,
       ].filter(Boolean).join("\n");
     } else {
-      majorHintLabel = "Best major result";
+      majorHintLabel = "Best major result location";
       majorHintText = "No major results found.";
     }
 
@@ -374,12 +374,14 @@ export default function App() {
                 Guess the golfer from their Wikipedia grid
               </div>
             </div>
-            <Badge
-              variant="outline"
-              className="ml-1 hidden rounded-full border-slate-300 bg-white/70 text-[10px] sm:inline-flex"
-            >
-              {SELF_TESTS_PASSED ? "live" : "parser warning"}
-            </Badge>
+            {!SELF_TESTS_PASSED && (
+              <Badge
+                variant="outline"
+                className="ml-1 hidden rounded-full border-red-300 bg-red-50 text-[10px] text-red-700 sm:inline-flex"
+              >
+                parser warning
+              </Badge>
+            )}
           </motion.div>
 
           <div className="ml-auto">
