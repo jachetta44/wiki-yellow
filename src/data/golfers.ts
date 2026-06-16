@@ -102,7 +102,7 @@ const GOLFER_DATA: Array<[string, string]> = [
   ["Matt Fitzpatrick", "Meticulous Yorkshire Englishman who writes obsessive yardage-book notes and won the 2022 U.S. Open at Brookline."],
   ["Greg Norman", "Australian 'Shark' famous for devastating Sunday meltdowns and later becoming CEO of LIV Golf."],
   ["Chris DiMarco", "Quirky Floridian famous for the 'claw' putting grip and his 2005 Masters playoff loss to Tiger."],
-  ["Thomas Bjørn", "Bearded Dane, winning 2018 European Ryder Cup captain, still haunted by his three-shot collapse at Sandwich in '03."],
+  // ["Thomas Bjørn", "Bearded Dane, winning 2018 European Ryder Cup captain, still haunted by his three-shot collapse at Sandwich in '03."],
   ["Miguel Ángel Jiménez", "Ponytailed, cigar-smoking, red-wine-loving Spaniard famous for his balletic pre-round stretching routine."],
   ["Ludvig Åberg", "Swedish Texas Tech star who leapt straight from college to the victorious 2023 European Ryder Cup team."],
   ["Cameron Young", "Tall New Yorker and son of Sleepy Hollow's PGA pro, seen by many as the next American major breakthrough."],
