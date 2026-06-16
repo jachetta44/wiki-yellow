@@ -32,4 +32,18 @@ export const WIKI_CSS = `
   .wiki-tour-wins tr:last-child th, .wiki-tour-wins tr:last-child td { border-bottom:none; }
   .wiki-tour-wins th { background:#f8fafc; font-weight:600; width:65%; color:#334155; }
   .wiki-tour-wins td { text-align:right; font-variant-numeric:tabular-nums; width:35%; color:#0f172a; font-weight:600; }
+
+  .pga-wins { background:#f8f9fa; color:#202122; font-family:sans-serif; padding:16px; border-radius:10px; border:1px solid #c8ccd1; }
+  .pga-wins .wikitable { width:100%; border-collapse:collapse; background:#fff; font-size:12.5px; }
+  .pga-wins .wikitable th, .pga-wins .wikitable td { border:1px solid #c8ccd1; padding:6px 10px; text-align:left; vertical-align:top; }
+  .pga-wins .wikitable th { background:#eaecf0; font-weight:700; color:#202122; }
+  .pga-wins .wikitable tbody tr:nth-child(even) td { background:#fafbfc; }
+  .pga-wins .wikitable a { color:#36c; text-decoration:none; pointer-events:none; }
+
+  /* Thin subtle scrollbars for the split-pane columns */
+  .scroll-col { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
+  .scroll-col::-webkit-scrollbar { width: 5px; }
+  .scroll-col::-webkit-scrollbar-track { background: transparent; }
+  .scroll-col::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
+  .scroll-col::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 `;

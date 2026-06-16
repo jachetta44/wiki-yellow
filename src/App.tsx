@@ -6,6 +6,7 @@ import { WIKI_CSS } from "@/lib/constants";
 import { runSelfTests, normalizeName, shuffleArray } from "@/lib/helpers";
 import { fetchWikiMarkup, findMajorTables, cleanTablesHtml, extractInfoboxData } from "@/lib/wiki";
 import { GOLFERS } from "@/data/golfers";
+import { MAJOR_RESULTS } from "@/data/majorResults";
 import { BoardPanel } from "@/components/BoardPanel";
 import { GuessPanel } from "@/components/GuessPanel";
 import { HintPanel } from "@/components/HintPanel";
@@ -13,8 +14,37 @@ import { Scoreboard } from "@/components/Scoreboard";
 import { Golfer, MetaInfo } from "@/components/types";
 
 const SELF_TESTS_PASSED = runSelfTests();
-const MAX_ROUND_POINTS = 5;
 
+// ---------- Par system ----------
+export const PAR = 3; // strokes at par
+
+export type RoundResult = {
+  label: string;  // "Birdie", "Par", etc.
+  scoreVsPar: number; // negative = under par
+  snowman: boolean;
+};
+
+export function computeRoundResult(strokes: number, gaveUp: boolean): RoundResult {
+  if (gaveUp) return { label: "Snowman ☃️", scoreVsPar: 4, snowman: true };
+  const scoreVsPar = strokes - PAR;
+  const label = parLabel(scoreVsPar);
+  return { label, scoreVsPar, snowman: false };
+}
+
+export function parLabel(scoreVsPar: number): string {
+  switch (scoreVsPar) {
+    case -3: return "Albatross";
+    case -2: return "Eagle";
+    case -1: return "Birdie";
+    case  0: return "Par";
+    case  1: return "Bogey";
+    case  2: return "Double Bogey";
+    case  3: return "Triple Bogey";
+    default: return scoreVsPar < 0 ? `${scoreVsPar}` : `+${scoreVsPar}`;
+  }
+}
+
+// ---------- Helpers ----------
 function isCorrectGuess(guess: string, golfer: Golfer): boolean {
   const normalizedGuess = normalizeName(guess);
   const validAnswers = [golfer.displayName, golfer.wikiTitle, ...(golfer.acceptedAnswers || [])]
@@ -30,12 +60,37 @@ const EMPTY_META: MetaInfo = {
   tourWins: null,
   nationality: null,
   topRanking: null,
+  topRankingYear: null,
   imageUrl: null,
   infoboxFound: false,
+  bornYear: null,
+  turnedPro: null,
+  college: null,
+  proWinsTotal: null,
+  amateurWins: null,
 };
 
+const SEEN_KEY = "wiki-yellow-seen-v1";
+
+function loadSeen(): Set<string> {
+  try {
+    const raw = localStorage.getItem(SEEN_KEY);
+    return new Set(raw ? (JSON.parse(raw) as string[]) : []);
+  } catch { return new Set(); }
+}
+
+function saveSeen(seen: Set<string>) {
+  try { localStorage.setItem(SEEN_KEY, JSON.stringify([...seen])); } catch {}
+}
+
+function buildBag(seen: Set<string>): Golfer[] {
+  const available = GOLFERS.filter((g) => !seen.has(g.wikiTitle));
+  return shuffleArray(available.length > 0 ? available : GOLFERS);
+}
+
 export default function App() {
-  const [shuffleBag, setShuffleBag] = useState(() => shuffleArray(GOLFERS));
+  const [seen, setSeen] = useState<Set<string>>(loadSeen);
+  const [shuffleBag, setShuffleBag] = useState<Golfer[]>(() => buildBag(loadSeen()));
   const [currentIndex, setCurrentIndex] = useState(0);
   const current = shuffleBag[currentIndex];
 
@@ -44,9 +99,16 @@ export default function App() {
   const [messageTone, setMessageTone] = useState<"info" | "ok" | "error">("info");
   const [answerRevealed, setAnswerRevealed] = useState(false);
   const [hintLevel, setHintLevel] = useState(0);
-  const [score, setScore] = useState(0);
+  const [wrongGuessesThisRound, setWrongGuessesThisRound] = useState(0);
+  // Only manual hint reveals cost a stroke (wrong guesses auto-reveal for free)
+  const [manualHintsRevealed, setManualHintsRevealed] = useState(0);
+
+  // Running session stats
+  const [totalVsPar, setTotalVsPar] = useState(0);
   const [rounds, setRounds] = useState(0);
   const [streak, setStreak] = useState(0);
+  const [lastResult, setLastResult] = useState<RoundResult | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [pngDataUrl, setPngDataUrl] = useState("");
@@ -54,19 +116,48 @@ export default function App() {
   const [meta, setMeta] = useState<MetaInfo>(EMPTY_META);
   const captureRef = useRef<HTMLDivElement | null>(null);
 
-  // Hint ladder: Build → Peak ranking → Wins → Nationality → Lifeline
-  const hints = useMemo(
-    () => [
-      meta.heightWeight || "Build unavailable on the page.",
-      meta.topRanking || "Reached the very top end of world golf.",
-      meta.tourWins || "Wins by tour unavailable.",
-      meta.nationality || "Nationality unavailable.",
-      current.lifeline,
-    ],
-    [meta, current]
-  );
+  const { hints, majorHintLabel } = useMemo(() => {
+    const majorData = MAJOR_RESULTS[current.wikiTitle] ?? { type: 'none' as const };
+    let majorHintText: string;
+    let majorHintLabel: string;
 
-  const roundPoints = Math.max(0, MAX_ROUND_POINTS - hintLevel);
+    if (majorData.type === 'win') {
+      majorHintLabel = "Last major win venue";
+      majorHintText = [
+        majorData.course,
+        majorData.location,
+        majorData.onlyMasters
+          ? "Tough luck — it's always Augusta! 🏌️"
+          : `${majorData.tournament} · ${majorData.year}`,
+      ]
+        .filter(Boolean)
+        .join("\n");
+    } else if (majorData.type === 'best') {
+      majorHintLabel = "Best major result";
+      majorHintText = [
+        majorData.course,
+        majorData.location,
+        `Best result: ${majorData.position} · ${majorData.tournament} ${majorData.year}`,
+      ].filter(Boolean).join("\n");
+    } else {
+      majorHintLabel = "Best major result";
+      majorHintText = "No major results found.";
+    }
+
+    return {
+      hints: [
+        meta.topRanking || "Peak ranking unavailable.",
+        meta.tourWins || "Wins by tour unavailable.",
+        meta.nationality || "Nationality unavailable.",
+        majorHintText,
+        current.lifeline,
+      ],
+      majorHintLabel,
+    };
+  }, [meta, current]);
+
+  // Wrong guesses auto-reveal the next hint at no extra cost; only manual reveals add strokes
+  const strokesThisRound = wrongGuessesThisRound + manualHintsRevealed;
 
   const normalizedGuess = normalizeName(guess);
   const suggestions = useMemo(() => {
@@ -79,7 +170,6 @@ export default function App() {
       .map((golfer) => golfer.displayName);
   }, [normalizedGuess]);
 
-  // Load the Wikipedia page whenever `current` changes.
   useEffect(() => {
     let cancelled = false;
     async function loadPlayer() {
@@ -89,6 +179,8 @@ export default function App() {
       setTableHtml("");
       setMeta(EMPTY_META);
       setHintLevel(0);
+      setWrongGuessesThisRound(0);
+      setManualHintsRevealed(0);
       setAnswerRevealed(false);
       setMessage("");
       setMessageTone("info");
@@ -98,10 +190,17 @@ export default function App() {
         if (cancelled) return;
         const doc = new DOMParser().parseFromString(html, "text/html");
         const tables = findMajorTables(doc);
-        const info = extractInfoboxData(doc);
         if (!tables.length) {
-          throw new Error("Could not locate the major championship results table on this Wikipedia page.");
+          // This golfer's Wikipedia page has no major results grid — skip silently,
+          // no score penalty, mark seen so we don't retry them this session.
+          if (!cancelled) {
+            console.warn(`No major table for ${current.wikiTitle} — auto-skipping`);
+            markSeen(current.wikiTitle);
+            nextPlayer();
+          }
+          return;
         }
+        const info = extractInfoboxData(doc);
         setTableHtml(cleanTablesHtml(tables));
         setMeta(info);
       } catch (err) {
@@ -112,9 +211,7 @@ export default function App() {
       }
     }
     loadPlayer();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [current]);
 
   useEffect(() => {
@@ -135,63 +232,88 @@ export default function App() {
     return () => window.clearTimeout(id);
   }, [tableHtml, loading]);
 
+  function markSeen(wikiTitle: string) {
+    setSeen((prev) => {
+      const next = new Set(prev);
+      next.add(wikiTitle);
+      saveSeen(next);
+      return next;
+    });
+  }
+
   function handleGuess() {
     if (!guess.trim() || answerRevealed) return;
     const correct = isCorrectGuess(guess, current);
+    setGuess("");
 
     if (correct) {
+      const result = computeRoundResult(strokesThisRound, false);
       setRounds((r) => r + 1);
-      setScore((s) => s + roundPoints);
-      setStreak((s) => s + 1);
-      setMessage(
-        `Correct — it was ${current.displayName}. +${roundPoints} point${
-          roundPoints === 1 ? "" : "s"
-        } this round.`
-      );
+      setTotalVsPar((t) => t + result.scoreVsPar);
+      setStreak((s) => (result.scoreVsPar <= 0 ? s + 1 : 0));
+      setLastResult(result);
+      setMessage(`${result.label} — ${current.displayName}!`);
       setMessageTone("ok");
       setAnswerRevealed(true);
+      markSeen(current.wikiTitle);
       return;
     }
 
+    // Wrong guess: costs 1 stroke and auto-reveals the next hint
+    setWrongGuessesThisRound((w) => w + 1);
+    setHintLevel((h) => Math.min(h + 1, hints.length));
     setStreak(0);
-    setMessage("Wrong guess — streak reset. Try again or reveal a hint.");
+    setMessage("Wrong — the next hint has been revealed.");
     setMessageTone("error");
   }
 
   function handleReveal() {
-    if (!answerRevealed) {
-      setRounds((r) => r + 1);
-      setStreak(0);
-    }
+    if (answerRevealed) return;
+    const result = computeRoundResult(strokesThisRound, true);
+    setRounds((r) => r + 1);
+    setTotalVsPar((t) => t + result.scoreVsPar);
+    setStreak(0);
+    setLastResult(result);
     setAnswerRevealed(true);
-    setMessage(`Answer revealed: ${current.displayName}. 0 pts this round.`);
+    setMessage(`Answer was ${current.displayName}. Snowman — ${result.scoreVsPar > 0 ? "+" : ""}${result.scoreVsPar} vs par.`);
     setMessageTone("info");
+    markSeen(current.wikiTitle);
   }
 
   function nextPlayer() {
     setGuess("");
-    setCurrentIndex((prevIndex) => {
-      const nextIndex = prevIndex + 1;
-      if (nextIndex >= shuffleBag.length) {
-        const reshuffled = shuffleArray(GOLFERS);
-        setShuffleBag(reshuffled);
-        return 0;
+    const nextIdx = currentIndex + 1;
+    if (nextIdx < shuffleBag.length) {
+      setCurrentIndex(nextIdx);
+    } else {
+      // Rebuild bag excluding all golfers seen so far (including current)
+      const newSeen = new Set(seen);
+      newSeen.add(current.wikiTitle);
+      const newBag = buildBag(newSeen);
+      // If buildBag had to reset (all seen), clear localStorage seen set
+      if (newBag.length === GOLFERS.length) {
+        setSeen(new Set());
+        saveSeen(new Set());
       }
-      return nextIndex;
-    });
+      setShuffleBag(newBag);
+      setCurrentIndex(0);
+    }
   }
 
   function revealHint() {
     if (answerRevealed) return;
     setHintLevel((h) => Math.min(h + 1, hints.length));
+    setManualHintsRevealed((m) => m + 1);
   }
 
   return (
-    <div className="min-h-screen bg-[#f6f3e8] text-slate-900">
+    // Desktop: lock to viewport height so each column scrolls independently.
+    // Mobile: normal stacking layout with page scroll.
+    <div className="flex min-h-svh flex-col bg-[#f6f3e8] text-slate-900 lg:h-svh">
       <style>{WIKI_CSS}</style>
 
-      {/* Slim top strip — title on the left, scoreboard pills on the right */}
-      <header className="sticky top-0 z-20 border-b border-slate-200/80 bg-[#f6f3e8]/90 backdrop-blur">
+      {/* ── Header ── fixed height, never scrolls */}
+      <header className="shrink-0 border-b border-slate-200/80 bg-[#f6f3e8]/90 backdrop-blur">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-4 px-4 py-3 md:px-8">
           <motion.div
             initial={{ opacity: 0, y: -4 }}
@@ -217,70 +339,73 @@ export default function App() {
 
           <div className="ml-auto">
             <Scoreboard
-              score={score}
+              totalVsPar={totalVsPar}
               rounds={rounds}
               streak={streak}
-              roundPoints={roundPoints}
-              maxRoundPoints={MAX_ROUND_POINTS}
+              lastResult={lastResult}
+              strokesThisRound={strokesThisRound}
             />
           </div>
         </div>
       </header>
 
-      {/* Main grid — board on the left, sticky action rail on the right */}
-      <main className="mx-auto max-w-7xl px-4 py-5 md:px-8 md:py-6">
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px] lg:items-start">
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.05 }}
-          >
-            <BoardPanel
-              loading={loading}
-              error={error}
-              pngDataUrl={pngDataUrl}
-              tableHtml={tableHtml}
-              captureRef={captureRef}
-            />
-          </motion.div>
+      {/* ── Main: fills remaining height, clips overflow on desktop ── */}
+      <main className="flex flex-1 flex-col overflow-hidden">
+        <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col overflow-hidden px-4 md:px-8">
 
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.12 }}
-            className="flex flex-col gap-4 lg:sticky lg:top-[88px]"
-          >
-            <GuessPanel
-              guess={guess}
-              setGuess={setGuess}
-              handleGuess={handleGuess}
-              suggestions={suggestions}
-              answerRevealed={answerRevealed}
-              message={message}
-              messageTone={messageTone}
-              currentName={current.displayName}
-              imageUrl={meta.imageUrl}
-              handleReveal={handleReveal}
-              nextPlayer={nextPlayer}
-              roundPoints={roundPoints}
-              maxRoundPoints={MAX_ROUND_POINTS}
-              hintsUsed={hintLevel}
-              totalHints={hints.length}
-            />
-            <HintPanel
-              hintLevel={hintLevel}
-              hints={hints}
-              onRevealNext={revealHint}
-              answerRevealed={answerRevealed}
-            />
-          </motion.div>
+          {/* Two-column grid: each column scrolls independently on desktop */}
+          <div className="flex-1 overflow-hidden lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-5">
+
+            {/* Left — wiki board scrolls within its column */}
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.05 }}
+              className="scroll-col h-full overflow-y-auto py-5 md:py-6 lg:pr-1"
+            >
+              <BoardPanel
+                loading={loading}
+                error={error}
+                pngDataUrl={pngDataUrl}
+                tableHtml={tableHtml}
+                captureRef={captureRef}
+              />
+            </motion.div>
+
+            {/* Right — guess + hints, scrollable but rarely needs to be */}
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.12 }}
+              className="scroll-col flex flex-col gap-3 overflow-y-auto py-5 md:py-6 lg:pl-0"
+            >
+              <GuessPanel
+                guess={guess}
+                setGuess={setGuess}
+                handleGuess={handleGuess}
+                suggestions={suggestions}
+                answerRevealed={answerRevealed}
+                message={message}
+                messageTone={messageTone}
+                currentName={current.displayName}
+                imageUrl={meta.imageUrl}
+                handleReveal={handleReveal}
+                nextPlayer={nextPlayer}
+                strokesThisRound={strokesThisRound}
+                hintsUsed={hintLevel}
+                totalHints={hints.length}
+              />
+              <HintPanel
+                hintLevel={hintLevel}
+                hints={hints}
+                onRevealNext={revealHint}
+                answerRevealed={answerRevealed}
+                labelOverrides={{ 3: majorHintLabel }}
+              />
+            </motion.div>
+          </div>
         </div>
       </main>
-
-      <footer className="mx-auto max-w-7xl px-4 pb-8 text-[11px] text-slate-500 md:px-8">
-        Wiki Yellow is an unofficial fan project. Major-result graphics and
-        player infobox data are fetched live from Wikipedia.
-      </footer>
     </div>
   );
 }

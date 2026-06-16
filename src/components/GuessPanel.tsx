@@ -1,8 +1,8 @@
-import { RotateCcw, Search, XOctagon } from "lucide-react";
+import { RotateCcw, Search, Flag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
 import { getInitials } from "@/lib/helpers";
+import { PAR, parLabel } from "@/App";
 
 export function GuessPanel({
   guess,
@@ -16,8 +16,7 @@ export function GuessPanel({
   imageUrl,
   handleReveal,
   nextPlayer,
-  roundPoints,
-  maxRoundPoints,
+  strokesThisRound,
   hintsUsed,
   totalHints,
 }: {
@@ -32,8 +31,7 @@ export function GuessPanel({
   imageUrl: string | null;
   handleReveal: () => void;
   nextPlayer: () => void;
-  roundPoints: number;
-  maxRoundPoints: number;
+  strokesThisRound: number;
   hintsUsed: number;
   totalHints: number;
 }) {
@@ -44,135 +42,117 @@ export function GuessPanel({
       ? "border-red-200 bg-red-50 text-red-900"
       : "border-slate-200 bg-white text-slate-800";
 
+  const scoreVsPar = strokesThisRound - PAR;
+  const onForLabel = parLabel(scoreVsPar);
+
+  const pillAccent =
+    scoreVsPar < 0
+      ? "bg-emerald-100 text-emerald-800 border-emerald-200"
+      : scoreVsPar === 0
+      ? "bg-amber-100 text-amber-800 border-amber-200"
+      : "bg-rose-100 text-rose-800 border-rose-200";
+
   return (
-    <Card className="rounded-3xl border-slate-200 bg-[#fffdf7] shadow-sm">
-      <CardContent className="space-y-3 p-4">
-        {/* Round-points banner — the stakes */}
-        <div className="flex items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-yellow-50 px-4 py-3">
-          <div>
-            <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-700">
-              This round is worth
-            </div>
-            <div className="mt-0.5 text-2xl font-bold leading-none text-amber-900">
-              {roundPoints}{" "}
-              <span className="text-sm font-medium text-amber-700">
-                / {maxRoundPoints} pts
-              </span>
-            </div>
-          </div>
-          <div className="text-right text-[11px] leading-tight text-amber-800">
-            <div className="font-semibold">
-              {hintsUsed}/{totalHints} hints used
-            </div>
-            <div>−1 pt per hint</div>
-          </div>
+    <div className="rounded-3xl border border-slate-200 bg-[#fffdf7] p-3 shadow-sm">
+      <div className="space-y-2.5">
+        {/* Slim status row */}
+        <div className="flex items-center justify-between gap-2">
+          <span className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold ${pillAccent}`}>
+            For: {onForLabel}
+          </span>
+          <span className="text-[11px] text-slate-500">
+            {strokesThisRound} stroke{strokesThisRound !== 1 ? "s" : ""} · par {PAR} · {hintsUsed}/{totalHints} hints
+          </span>
         </div>
 
-        {/* Primary action: type + submit */}
-        <div>
-          <label
-            htmlFor="wy-guess"
-            className="mb-1 block text-xs font-semibold uppercase tracking-[0.14em] text-slate-500"
+        {/* Guess input */}
+        <div className="flex gap-2">
+          <Input
+            id="wy-guess"
+            value={guess}
+            onChange={(e) => setGuess(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") { handleGuess(); }
+              if (e.key === "Tab" && suggestions.length > 0) {
+                e.preventDefault();
+                setGuess(suggestions[0]);
+              }
+            }}
+            placeholder="Enter golfer name…"
+            disabled={answerRevealed}
+            className="h-9 flex-1 rounded-xl border-slate-300 bg-white text-sm"
+            autoComplete="off"
+          />
+          <Button
+            onClick={handleGuess}
+            disabled={answerRevealed || !guess.trim()}
+            className="h-9 rounded-xl bg-slate-900 px-3 text-white hover:bg-slate-800"
           >
-            Your guess
-          </label>
-          <div className="flex gap-2">
-            <Input
-              id="wy-guess"
-              value={guess}
-              onChange={(e) => setGuess(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleGuess();
-              }}
-              placeholder="Enter golfer name…"
-              disabled={answerRevealed}
-              className="h-10 flex-1 rounded-xl border-slate-300 bg-white"
-              autoComplete="off"
-            />
-            <Button
-              onClick={handleGuess}
-              disabled={answerRevealed || !guess.trim()}
-              className="h-10 rounded-xl bg-slate-900 px-4 text-white hover:bg-slate-800"
-            >
-              <Search className="mr-1.5 h-4 w-4" />
-              Guess
-            </Button>
-          </div>
-
-          {guess.trim() && suggestions.length > 0 && !answerRevealed && (
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {suggestions.map((name) => (
-                <button
-                  key={name}
-                  type="button"
-                  onClick={() => setGuess(name)}
-                  className="rounded-full border border-slate-300 bg-white px-2.5 py-1 text-xs text-slate-700 transition hover:bg-slate-50"
-                >
-                  {name}
-                </button>
-              ))}
-            </div>
-          )}
+            <Search className="mr-1 h-3.5 w-3.5" />
+            Guess
+          </Button>
         </div>
 
-        {/* Feedback / answer reveal */}
+        {/* Autocomplete suggestions */}
+        {guess.trim() && suggestions.length > 0 && !answerRevealed && (
+          <div className="flex flex-wrap gap-1">
+            {suggestions.map((name) => (
+              <button
+                key={name}
+                type="button"
+                onClick={() => setGuess(name)}
+                className="rounded-full border border-slate-300 bg-white px-2 py-0.5 text-xs text-slate-700 transition hover:bg-slate-50"
+              >
+                {name}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Feedback */}
         {message && (
-          <div className={`rounded-2xl border px-3 py-2 text-sm ${toneClass}`}>
+          <div className={`rounded-xl border px-2.5 py-1.5 text-xs ${toneClass}`}>
             {message}
           </div>
         )}
 
+        {/* Revealed state + next */}
         {answerRevealed && (
-          <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
+          <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-2">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
               {imageUrl ? (
                 <img src={imageUrl} alt={currentName} className="h-full w-full object-cover" />
               ) : (
-                <span className="text-sm font-semibold text-slate-700">
-                  {getInitials(currentName)}
-                </span>
+                <span className="text-xs font-semibold text-slate-700">{getInitials(currentName)}</span>
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                Revealed
-              </div>
-              <div className="truncate font-semibold text-slate-900">{currentName}</div>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Revealed</div>
+              <div className="truncate text-sm font-semibold text-slate-900">{currentName}</div>
             </div>
             <Button
               onClick={nextPlayer}
-              className="h-9 rounded-xl bg-slate-900 px-3 text-white hover:bg-slate-800"
+              className="h-8 rounded-xl bg-slate-900 px-3 text-xs text-white hover:bg-slate-800"
             >
-              <RotateCcw className="mr-1.5 h-4 w-4" />
+              <RotateCcw className="mr-1 h-3 w-3" />
               Next
             </Button>
           </div>
         )}
 
-        {/* Secondary actions */}
+        {/* Give up */}
         {!answerRevealed && (
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-xl"
-              onClick={handleReveal}
-            >
-              <XOctagon className="mr-1.5 h-4 w-4" />
-              Give up
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-xl"
-              onClick={nextPlayer}
-            >
-              <RotateCcw className="mr-1.5 h-4 w-4" />
-              Skip
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 rounded-xl text-xs"
+            onClick={handleReveal}
+          >
+            <Flag className="mr-1 h-3 w-3" />
+            Give up
+          </Button>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

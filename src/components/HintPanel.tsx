@@ -1,20 +1,12 @@
-import { Lock, Eye } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+import { Lock, Eye, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-/**
- * Hint ladder, ordered per spec:
- *   Build → Peak ranking → Wins by tour → Nationality → Lifeline
- * Each row reveals independently and costs 1 pt. Unrevealed rows show an
- * inline "Reveal (−1)" button; revealed rows show the content.
- */
-const LABELS = ["Build", "Peak ranking", "Wins by tour", "Nationality", "Lifeline"];
+const DEFAULT_LABELS = ["Peak ranking", "Wins by tour", "Nationality", "Last major win venue", "Lifeline"];
 const BLURBS = [
-  "Height and weight from the infobox.",
   "Highest world-ranking peak.",
   "Win totals, broken out by tour.",
   "Citizenship / country represented.",
+  "Course and location of their most recent major win (or best result).",
   "A last-resort personal tell — almost gives it away.",
 ];
 
@@ -27,101 +19,120 @@ export function HintPanel({
   hints,
   onRevealNext,
   answerRevealed,
+  labelOverrides = {},
 }: {
   hintLevel: number;
   hints: string[];
   onRevealNext: () => void;
   answerRevealed: boolean;
+  labelOverrides?: Record<number, string>;
 }) {
-  const pct = (hintLevel / hints.length) * 100;
+  const allRevealed = hintLevel >= hints.length;
+  const canReveal = !allRevealed && !answerRevealed;
 
   return (
-    <Card className="rounded-3xl border-slate-200 bg-white shadow-sm">
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <CardTitle className="font-serif text-xl tracking-tight">Hint ladder</CardTitle>
-          <span className="text-[11px] font-medium text-slate-500">
-            {hintLevel} / {hints.length} used
-          </span>
+    <div className="rounded-3xl border border-slate-200 bg-white shadow-sm">
+      {/* Header */}
+      <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-3 py-2.5">
+        <span className="font-serif text-base font-semibold tracking-tight text-slate-900">Hints</span>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] text-slate-500">{hintLevel}/{hints.length}</span>
+          <Button
+            size="sm"
+            onClick={onRevealNext}
+            disabled={!canReveal}
+            className={[
+              "h-6 rounded-full px-2.5 text-[11px] font-semibold",
+              canReveal
+                ? "bg-amber-400 text-slate-900 hover:bg-amber-300"
+                : "bg-slate-100 text-slate-400",
+            ].join(" ")}
+          >
+            <Lightbulb className="mr-1 h-3 w-3" />
+            {allRevealed ? "All shown" : "Reveal"}
+          </Button>
         </div>
-        <Progress value={pct} className="mt-2 h-1.5" />
-      </CardHeader>
+      </div>
 
-      <CardContent className="pt-0">
-        <ul className="divide-y divide-slate-100">
-          {LABELS.map((label, index) => {
-            const revealed = hintLevel > index;
-            const value = hints[index] || "";
-            const isNext = !revealed && index === hintLevel;
-            const renderAsHtml = revealed && label === "Wins by tour" && isHtmlHint(value);
-            const isLifeline = label === "Lifeline";
+      {/* Hint rows */}
+      <ul className="divide-y divide-slate-100 px-3">
+        {DEFAULT_LABELS.map((defaultLabel, index) => {
+          const label = labelOverrides[index] ?? defaultLabel;
+          const revealed = hintLevel > index;
+          const value = hints[index] || "";
+          const isNext = !revealed && index === hintLevel;
+          const renderAsHtml = revealed && defaultLabel === "Wins by tour" && isHtmlHint(value);
+          const isLifeline = defaultLabel === "Lifeline";
 
-            return (
-              <li
-                key={label}
-                className={[
-                  "py-2.5",
-                  isNext && !answerRevealed ? "-mx-2 rounded-xl bg-amber-50/60 px-2" : "",
-                ].join(" ")}
-              >
-                <div className="flex items-start gap-3">
-                  <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-[11px] font-semibold text-slate-600">
-                    {index + 1}
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-slate-900">
-                        {label}
-                      </span>
-                      {isLifeline && (
-                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-700">
-                          lifeline
-                        </span>
-                      )}
-                    </div>
-                    {revealed ? (
-                      renderAsHtml ? (
-                        <div
-                          className="wiki-tour-wins mt-1.5 text-sm text-slate-700"
-                          dangerouslySetInnerHTML={{ __html: value }}
-                        />
-                      ) : (
-                        <div className="mt-0.5 whitespace-pre-line text-sm leading-relaxed text-slate-700">
-                          {value}
-                        </div>
-                      )
-                    ) : (
-                      <div className="mt-0.5 text-xs text-slate-500">{BLURBS[index]}</div>
-                    )}
-                  </div>
-
-                  <div className="shrink-0">
-                    {revealed ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-emerald-700">
-                        <Eye className="h-3 w-3" /> shown
-                      </span>
-                    ) : isNext && !answerRevealed ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-7 rounded-full border-amber-300 bg-white px-3 text-xs font-semibold text-amber-800 hover:bg-amber-50"
-                        onClick={onRevealNext}
-                      >
-                        Reveal −1
-                      </Button>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-slate-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-                        <Lock className="h-3 w-3" /> locked
-                      </span>
-                    )}
-                  </div>
+          return (
+            <li
+              key={defaultLabel}
+              className={[
+                "py-2",
+                isNext && !answerRevealed ? "-mx-3 bg-amber-50/70 px-3" : "",
+              ].join(" ")}
+            >
+              <div className="flex items-start gap-2">
+                {/* Number bubble */}
+                <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-[10px] font-semibold text-slate-500">
+                  {index + 1}
                 </div>
-              </li>
-            );
-          })}
-        </ul>
-      </CardContent>
-    </Card>
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-semibold text-slate-900">{label}</span>
+                    {isLifeline && (
+                      <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-amber-700">
+                        lifeline
+                      </span>
+                    )}
+                    {isNext && !answerRevealed && (
+                      <span className="rounded-full bg-amber-200/70 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-amber-800">
+                        next
+                      </span>
+                    )}
+                  </div>
+
+                  {revealed ? (
+                    renderAsHtml ? (
+                      <div
+                        className="wiki-tour-wins mt-1 text-xs text-slate-700"
+                        dangerouslySetInnerHTML={{ __html: value }}
+                      />
+                    ) : (
+                      <div className="mt-0.5 whitespace-pre-line text-xs leading-relaxed text-slate-700">
+                        {value}
+                      </div>
+                    )
+                  ) : (
+                    <div className="mt-0.5 text-[11px] text-slate-400">{BLURBS[index]}</div>
+                  )}
+                </div>
+
+                {/* Lock / eye icon */}
+                <div className="shrink-0 pt-0.5">
+                  {revealed ? (
+                    <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+                      <Eye className="h-3 w-3" />
+                    </div>
+                  ) : (
+                    <div
+                      className={[
+                        "flex h-5 w-5 items-center justify-center rounded-full",
+                        isNext && !answerRevealed
+                          ? "bg-amber-100 text-amber-700"
+                          : "bg-slate-100 text-slate-400",
+                      ].join(" ")}
+                    >
+                      <Lock className="h-3 w-3" />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }

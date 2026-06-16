@@ -12,6 +12,12 @@ export type MetaInfo = {
   tourWins: string | null;
   nationality: string | null;
   topRanking: string | null;
+  topRankingYear: number | null;
   imageUrl: string | null;
   infoboxFound: boolean;
+  bornYear: number | null;
+  turnedPro: string | null;
+  college: string | null;
+  proWinsTotal: string | null;
+  amateurWins: string | null;
 };
