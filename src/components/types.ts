@@ -1,8 +1,11 @@
+export type Era = 'legend' | 'classic' | 'modern';
+
 export type Golfer = {
   wikiTitle: string;
   displayName: string;
   acceptedAnswers?: string[];
   lifeline: string;
+  era: Era;
 };
 
 export type MetaInfo = {

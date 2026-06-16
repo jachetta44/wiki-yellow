@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { toPng } from "html-to-image";
 import { Badge } from "@/components/ui/badge";
 import { WIKI_CSS } from "@/lib/constants";
-import { runSelfTests, normalizeName, shuffleArray } from "@/lib/helpers";
+import { runSelfTests, normalizeName, shuffleArray, getDailyGolfers, getTodayString } from "@/lib/helpers";
 import { fetchWikiMarkup, findMajorTables, cleanTablesHtml, extractInfoboxData } from "@/lib/wiki";
 import { GOLFERS } from "@/data/golfers";
 import { MAJOR_RESULTS } from "@/data/majorResults";
@@ -94,6 +94,20 @@ const EMPTY_META: MetaInfo = {
 };
 
 const SEEN_KEY = "wiki-yellow-seen-v1";
+const DAILY_KEY = "wiki-yellow-daily-v1";
+
+function loadDailyDone(): boolean {
+  try {
+    const raw = localStorage.getItem(DAILY_KEY);
+    if (!raw) return false;
+    const { date } = JSON.parse(raw) as { date: string };
+    return date === getTodayString();
+  } catch { return false; }
+}
+
+function saveDailyDone() {
+  try { localStorage.setItem(DAILY_KEY, JSON.stringify({ date: getTodayString() })); } catch {}
+}
 
 function loadSeen(): Set<string> {
   try {
@@ -112,10 +126,14 @@ function buildBag(seen: Set<string>): Golfer[] {
 }
 
 export default function App() {
+  const [mode, setMode] = useState<'daily' | 'infinite'>('daily');
   const [seen, setSeen] = useState<Set<string>>(loadSeen);
   const [shuffleBag, setShuffleBag] = useState<Golfer[]>(() => buildBag(loadSeen()));
+  const [dailyBag] = useState<Golfer[]>(() => getDailyGolfers(GOLFERS));
   const [currentIndex, setCurrentIndex] = useState(0);
-  const current = shuffleBag[currentIndex];
+
+  const activeBag = mode === 'daily' ? dailyBag : shuffleBag;
+  const current = activeBag[currentIndex];
 
   const [guess, setGuess] = useState("");
   const [message, setMessage] = useState("");
@@ -310,20 +328,22 @@ export default function App() {
 
   function nextPlayer() {
     setGuess("");
-    // After 9 holes show the scorecard (holeHistory already has the completed hole)
     if (holeHistory.length >= HOLES_PER_ROUND) {
+      if (mode === 'daily') saveDailyDone();
       setShowScorecard(true);
       return;
     }
     const nextIdx = currentIndex + 1;
+    if (mode === 'daily') {
+      setCurrentIndex(nextIdx);
+      return;
+    }
     if (nextIdx < shuffleBag.length) {
       setCurrentIndex(nextIdx);
     } else {
-      // Rebuild bag excluding all golfers seen so far (including current)
       const newSeen = new Set(seen);
       newSeen.add(current.wikiTitle);
       const newBag = buildBag(newSeen);
-      // If buildBag had to reset (all seen), clear localStorage seen set
       if (newBag.length === GOLFERS.length) {
         setSeen(new Set());
         saveSeen(new Set());
@@ -336,6 +356,18 @@ export default function App() {
   function startNewRound() {
     setHoleHistory([]);
     setShowScorecard(false);
+    setCurrentIndex(0);
+    if (mode === 'infinite') {
+      setShuffleBag(buildBag(seen));
+    }
+  }
+
+  function switchToInfinite() {
+    setMode('infinite');
+    setHoleHistory([]);
+    setShowScorecard(false);
+    setCurrentIndex(0);
+    setShuffleBag(buildBag(seen));
   }
 
   function revealHint() {
@@ -352,7 +384,9 @@ export default function App() {
         <ScorecardModal
           holeHistory={holeHistory}
           totalVsPar={totalVsPar}
+          mode={mode}
           onNewRound={startNewRound}
+          onSwitchToInfinite={switchToInfinite}
         />
       )}
       <style>{WIKI_CSS}</style>
@@ -371,7 +405,7 @@ export default function App() {
             <div className="leading-tight">
               <div className="font-serif text-2xl tracking-tight">Wiki Yellow</div>
               <div className="text-[11px] text-slate-600">
-                Guess the golfer from their Wikipedia grid
+                {mode === 'daily' ? 'Daily · Test your Major Champ Knowledge' : 'Infinite Mode'}
               </div>
             </div>
             {!SELF_TESTS_PASSED && (
@@ -384,7 +418,22 @@ export default function App() {
             )}
           </motion.div>
 
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-3">
+            {/* Mode toggle */}
+            <div className="flex overflow-hidden rounded-full border border-slate-200 bg-white text-[11px] font-semibold shadow-sm">
+              <button
+                onClick={() => { if (mode !== 'daily') { setMode('daily'); setHoleHistory([]); setShowScorecard(false); setCurrentIndex(0); } }}
+                className={`px-3 py-1 transition ${mode === 'daily' ? 'bg-yellow-300 text-slate-900' : 'text-slate-500 hover:bg-slate-50'}`}
+              >
+                Daily
+              </button>
+              <button
+                onClick={switchToInfinite}
+                className={`px-3 py-1 transition ${mode === 'infinite' ? 'bg-slate-900 text-white' : 'text-slate-500 hover:bg-slate-50'}`}
+              >
+                Infinite
+              </button>
+            </div>
             <Scoreboard
               totalVsPar={totalVsPar}
               rounds={rounds}
@@ -395,6 +444,7 @@ export default function App() {
           </div>
         </div>
       </header>
+
 
       {/* ── Main: fills remaining height, clips overflow on desktop ── */}
       <main className="flex flex-1 flex-col overflow-hidden">

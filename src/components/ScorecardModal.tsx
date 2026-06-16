@@ -27,11 +27,15 @@ function totalAccent(n: number): string {
 export function ScorecardModal({
   holeHistory,
   totalVsPar,
+  mode,
   onNewRound,
+  onSwitchToInfinite,
 }: {
   holeHistory: HoleRecord[];
   totalVsPar: number;
+  mode: 'daily' | 'infinite';
   onNewRound: () => void;
+  onSwitchToInfinite: () => void;
 }) {
   const roundVsPar = holeHistory.reduce((sum, h) => sum + h.result.scoreVsPar, 0);
 
@@ -59,15 +63,22 @@ export function ScorecardModal({
               <div className="font-serif text-xl tracking-tight text-slate-900">Front Nine</div>
               <div className="text-xs text-slate-500">Wiki Yellow ⛳</div>
             </div>
-            <div
-              className={[
-                "flex flex-col items-center rounded-2xl border px-4 py-2",
-                totalAccent(roundVsPar),
-              ].join(" ")}
-            >
-              <div className="text-2xl font-bold leading-none">{formatVsPar(roundVsPar)}</div>
-              <div className="mt-0.5 text-[10px] font-medium uppercase tracking-wide opacity-60">
-                this round
+            <div className="flex flex-col items-end gap-1">
+              {mode === 'daily' && (
+                <span className="rounded-full bg-yellow-300 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-900">
+                  Daily
+                </span>
+              )}
+              <div
+                className={[
+                  "flex flex-col items-center rounded-2xl border px-4 py-2",
+                  totalAccent(roundVsPar),
+                ].join(" ")}
+              >
+                <div className="text-2xl font-bold leading-none">{formatVsPar(roundVsPar)}</div>
+                <div className="mt-0.5 text-[10px] font-medium uppercase tracking-wide opacity-60">
+                  this round
+                </div>
               </div>
             </div>
           </div>
@@ -125,22 +136,38 @@ export function ScorecardModal({
         </div>
 
         {/* Actions */}
-        <div className="flex gap-2 px-4 pb-4">
-          <Button
-            variant="outline"
-            className="flex-1 rounded-xl border-slate-300"
-            onClick={handleShare}
-          >
-            <Share2 className="mr-2 h-4 w-4" />
-            Copy score
-          </Button>
-          <Button
-            className="flex-1 rounded-xl bg-slate-900 text-white hover:bg-slate-800"
-            onClick={onNewRound}
-          >
-            <RotateCcw className="mr-2 h-4 w-4" />
-            New round
-          </Button>
+        <div className="flex flex-col gap-2 px-4 pb-4">
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              className="flex-1 rounded-xl border-slate-300"
+              onClick={handleShare}
+            >
+              <Share2 className="mr-2 h-4 w-4" />
+              Copy score
+            </Button>
+            {mode === 'infinite' ? (
+              <Button
+                className="flex-1 rounded-xl bg-slate-900 text-white hover:bg-slate-800"
+                onClick={onNewRound}
+              >
+                <RotateCcw className="mr-2 h-4 w-4" />
+                New round
+              </Button>
+            ) : (
+              <Button
+                className="flex-1 rounded-xl bg-slate-900 text-white hover:bg-slate-800"
+                onClick={onSwitchToInfinite}
+              >
+                Keep playing →
+              </Button>
+            )}
+          </div>
+          {mode === 'daily' && (
+            <p className="text-center text-[11px] text-slate-400">
+              Daily round complete — come back tomorrow for a new nine.
+            </p>
+          )}
         </div>
       </div>
     </div>
