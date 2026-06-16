@@ -12,6 +12,7 @@ import { GuessPanel } from "@/components/GuessPanel";
 import { HintPanel } from "@/components/HintPanel";
 import { Scoreboard } from "@/components/Scoreboard";
 import { ScorecardModal } from "@/components/ScorecardModal";
+import { HowToPlayModal, useHowToPlay } from "@/components/HowToPlayModal";
 import { Golfer, MetaInfo } from "@/components/types";
 
 const SELF_TESTS_PASSED = runSelfTests();
@@ -126,6 +127,7 @@ function buildBag(seen: Set<string>): Golfer[] {
 }
 
 export default function App() {
+  const { open: howToPlayOpen, setOpen: setHowToPlayOpen } = useHowToPlay();
   const [mode, setMode] = useState<'daily' | 'infinite'>('daily');
   const [seen, setSeen] = useState<Set<string>>(loadSeen);
   const [shuffleBag, setShuffleBag] = useState<Golfer[]>(() => getInfiniteGolfers(GOLFERS));
@@ -373,6 +375,7 @@ export default function App() {
     // Desktop: lock to viewport height so each column scrolls independently.
     // Mobile: normal stacking layout with page scroll.
     <div className="flex min-h-svh flex-col bg-[#f6f3e8] text-slate-900 lg:h-svh">
+      {howToPlayOpen && <HowToPlayModal onClose={() => setHowToPlayOpen(false)} />}
       {showScorecard && (
         <ScorecardModal
           holeHistory={holeHistory}
@@ -411,7 +414,15 @@ export default function App() {
             )}
           </motion.div>
 
-          <div className="ml-auto flex items-center gap-3">
+          <div className="ml-auto flex items-center gap-2">
+            {/* How to play */}
+            <button
+              onClick={() => setHowToPlayOpen(true)}
+              className="flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 bg-white text-[11px] font-bold text-slate-500 shadow-sm hover:bg-slate-50 transition"
+              aria-label="How to play"
+            >
+              ?
+            </button>
             {/* Mode toggle */}
             <div className="flex overflow-hidden rounded-full border border-slate-200 bg-white text-[11px] font-semibold shadow-sm">
               <button
