@@ -114,6 +114,17 @@ export function HowToPlayModal({ onClose }: { onClose: () => void }) {
           {/* Demo */}
           <DemoAnimation />
 
+          {/* Daily / Infinite */}
+          <div className="rounded-2xl border border-yellow-200 bg-yellow-50 px-4 py-3 space-y-1.5">
+            <div className="text-xs font-bold uppercase tracking-wider text-yellow-700 mb-1">Modes</div>
+            <div className="text-xs text-slate-700">
+              <span className="font-semibold">Daily —</span> everyone plays the same 9 golfers. Resets at midnight UTC. Share your emoji scorecard.
+            </div>
+            <div className="text-xs text-slate-700">
+              <span className="font-semibold">Infinite —</span> play as many rounds as you want, randomly drawn each time.
+            </div>
+          </div>
+
           {/* Rules */}
           <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 space-y-2">
             <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">How it works</div>
@@ -133,22 +144,11 @@ export function HowToPlayModal({ onClose }: { onClose: () => void }) {
           {/* Scoring */}
           <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 space-y-2">
             <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Scoring — par 3</div>
-            <ScoreRow emoji="🏌️" label="Hole in One" desc="Correct with no hints used" />
+            <ScoreRow emoji="🦅" label="Hole in One" desc="Correct with no hints used" />
             <ScoreRow emoji="🐦" label="Birdie −1"   desc="Correct after 1 hint" />
             <ScoreRow emoji="⛳" label="Par"          desc="Correct after 2 hints" />
             <ScoreRow emoji="🟠" label="Bogey +1"     desc="Correct after 3 hints" />
             <ScoreRow emoji="🟥" label="Triple +3"    desc="Give up" />
-          </div>
-
-          {/* Daily / Infinite */}
-          <div className="rounded-2xl border border-yellow-200 bg-yellow-50 px-4 py-3 space-y-1.5">
-            <div className="text-xs font-bold uppercase tracking-wider text-yellow-700 mb-1">Modes</div>
-            <div className="text-xs text-slate-700">
-              <span className="font-semibold">Daily —</span> everyone plays the same 9 golfers. Resets at midnight UTC. Share your emoji scorecard.
-            </div>
-            <div className="text-xs text-slate-700">
-              <span className="font-semibold">Infinite —</span> play as many rounds as you want, randomly drawn each time.
-            </div>
           </div>
         </div>
 
@@ -166,16 +166,6 @@ export function HowToPlayModal({ onClose }: { onClose: () => void }) {
 }
 
 export function useHowToPlay() {
-  const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    try {
-      if (!localStorage.getItem(SEEN_KEY)) {
-        setOpen(true);
-        localStorage.setItem(SEEN_KEY, "1");
-      }
-    } catch {}
-  }, []);
-
+  const [open, setOpen] = useState(true);
   return { open, setOpen };
 }
