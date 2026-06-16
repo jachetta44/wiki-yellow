@@ -32,7 +32,7 @@ export function Scoreboard({
   const isFedoraStreak = streak >= 5;
 
   // "On for" label based on current round's stroke count (not yet finished)
-  const onForLabel = parLabel(strokesThisRound - PAR);
+  const onForLabel = parLabel((strokesThisRound + 1) - PAR);
 
   return (
     <div className="flex flex-wrap items-stretch gap-2">
